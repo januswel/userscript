@@ -4,24 +4,40 @@
 // @description    add optional, but usefull features to LDR / Fastladder
 // @include        http://reader.livedoor.com/reader/*
 // @include        http://fastladder.com/reader/*
-// @version        0.10
+// @version        0.11
 // @author         janus_wel<janus.wel.3@gmail.com>
 // ==/UserScript==
 
 /*
-based on:
-    http://d.hatena.ne.jp/reinyannyan/20060511/p1
-    http://d.hatena.ne.jp/antipop/20060430/1146343265
-    http://d.hatena.ne.jp/kusigahama/20071107
-*/
+ * Last Change: 2009/01/08 08:36:25.
+ * ACKOWLEDGMENT
+ * this script is based on:
+ *  - http://d.hatena.ne.jp/reinyannyan/20060511/p1
+ *  - http://d.hatena.ne.jp/antipop/20060430/1146343265
+ *  - http://d.hatena.ne.jp/kusigahama/20071107
+ */
 
 ( function () {
 
+// configuration ---
+// go to "t"op
+// to avoid keybind confliction ( 'g' is used by LDR Full Feed )
+const KEY_GOTO_TOP          = 't';
+// go to "b"ottom
+// to avoid keybind confliction ( 'G' is used by LDR Full Feed )
+const KEY_GOTO_BOTTOM       = 'b';
+// WARNING: rewrite default feature of key-bind "Z"
+const KEY_TOGGLE_FULLSCREEN = 'Z';
+// from ldr_relative_rate.user.js
+const KEY_RAISE_RATING      = 'w';
+const KEY_CUT_RATING        = 'q';
+
+
+// main ---
 // assumptions
 const w = unsafeWindow || window;
 with (w) {
 
-// main ---
 window.addEventListener(
     'load',
     function () {
@@ -34,26 +50,29 @@ window.addEventListener(
 );
 
 // stuff ---
-// go to "t"op
-// to avoid keybind confliction ( 'g' is used by LDR Full Feed )
-function gotoTop() { Keybind.add('t', Control.scroll_top); }
+// go to top of the current feed
+function gotoTop() { Keybind.add(KEY_GOTO_TOP, Control.scroll_top); }
 
-// go to "b"ottom
-// to avoid keybind confliction ( 'G' is used by LDR Full Feed )
+// go to bottom of the current feed
 function gotoBottom() {
     Keybind.add(
-        'b',
+        KEY_GOTO_BOTTOM,
         function () {
-            Control.scroll_to_px($('right_container').scrollHeight);
+            var r = $('right_container');
+            var actualStyle = document.defaultView.getComputedStyle(r, '');
+            var visibleHeight = parseInt(actualStyle.height.replace(/px$/, ''), 10);
+            var paddingHeight = $('scroll_padding').scrollHeight;
+            var actualHeight = r.scrollHeight;
+            var destinationHeight = actualHeight - visibleHeight - paddingHeight;
+            if (destinationHeight > 0) Control.scroll_to_px(destinationHeight);
         }
     );
 }
 
 // toggle fullscreen
-// WARNING: rewrite default feature of key-bind 'Z'
 function toggleFullscreen() {
     Keybind.add(
-        'Z',
+        KEY_TOGGLE_FULLSCREEN,
         function () {
             function hideRightTopNavigator() {
                 const rightTopNavigatorID = 'right_top_navi';
@@ -61,10 +80,10 @@ function toggleFullscreen() {
                 fit_screen()
             };
 
-            // defualt keybind 'Z'
+            // in defualt, this feature binded key "Z"
             State.fullscreen = State.show_left ? 1 : 0;
             Control.toggle_fullscreen();
-            // default keybind 'z'
+            // in defualt, this feature binded key "z"
             Control.toggle_leftpane();
             hideRightTopNavigator();
         }
@@ -78,9 +97,9 @@ function changeRatingRelatively() {
         if (imageURL && imageURL.match(/(\d)\.gif$/)) return parseInt(RegExp.$1, 10);
         return;
     }
-    Keybind.add('w', function (){ vi[getRate() + 1](); });
+    Keybind.add(KEY_RAISE_RATING, function (){ vi[getRate() + 1](); });
     Keybind.add(
-        'q',
+        KEY_CUT_RATING,
         function () {
             var rate = getRate();
             rate === 0

@@ -4,12 +4,12 @@
 // @description    add various features with services provided by Hatena, to LDR / Fastladder
 // @include        http://reader.livedoor.com/reader/*
 // @include        http://fastladder.com/reader/*
-// @version        0.11
+// @version        0.40
 // @author         janus_wel<janus.wel.3@gmail.com>
 // ==/UserScript==
 
 /*
- * Last Change: 2009/01/08 21:10:40.
+ * Last Change: 2009/01/09 16:08:45.
  *
  * ACKNOWLEDGMENT
  * this script is based on:
@@ -18,15 +18,47 @@
  *  - http://d.hatena.ne.jp/KGA/20070908/1189223454
  *  - http://michilu.com/blog/posts/123/
  *  - http://zeromemory.sblo.jp/article/1230111.html
- *
- * TODO
- * fine-tuning screenshot z-index
+ *  - http://d.hatena.ne.jp/aki77/20060601/1149184418
  */
 
 ( function () {
 
 const KEY_HATENA_BOOKMARK_COMMENT = 'h';
-const FILTER_NOT_COMMENT = false;
+const KEY_TOGGLE_COMMENT_FILTER = 'H';
+const LOCALE = (function getLocale() {
+    const LOCALE_ALL = [
+        {
+            name: 'livedoor Reader',
+            url:  '^http://reader\.livedoor\.com/reader/',
+            data: {
+                SUMOF_HATENA_BOOKMARK_DESC: '現在のフィードのはてなブックマークにおける被ブックマーク数合計',
+                NUMOF_HATENA_BOOKMARK_DESC: '現在のアイテムのはてなブックマークにおける被ブックマーク数合計',
+                SUMOF_HATENA_STAR_DESC:     '現在のフィードのはてなスター数合計',
+                HATEBU_COMMENT_TITLE:       'はてなブックマークコメント',
+                HATEBU_COMMENT_LOADING:     'はてなブックマークからロード中…',
+                HATEBU_COMMENT_COMPLETE:    'ロード完了。',
+            },
+        },
+        {
+            name: 'Fastladder',
+            url:  '^http://fastladder\.com/reader/',
+            data: {
+                SUMOF_HATENA_BOOKMARK_DESC: 'the sum of bookmarked on the feed by Hatena Bookmark',
+                NUMOF_HATENA_BOOKMARK_DESC: 'the number of bookmarked on the entry by Hatena Bookmark',
+                SUMOF_HATENA_STAR_DESC:     'the sum of Hatena Star on the feed',
+                HATEBU_COMMENT_TITLE:       'comments on Hatena Bookmark',
+                HATEBU_COMMENT_LOADING:     'Loading Hatena Bookmark comments...',
+                HATEBU_COMMENT_COMPLETE:    'Loading completed.',
+            },
+        },
+    ];
+
+    for (var i=0, l=LOCALE_ALL.length ; i<l ; ++i) {
+        var locale = LOCALE_ALL[i]
+        if (locale.url.match(document.location.href)) return locale.data;
+    }
+    return null;
+})();
 
 // main ---
 window.addEventListener(
@@ -59,7 +91,7 @@ function sumofHatenaBookmark() {
                 <img style="vertical-align:middle; border:none;" src={hatenaBookmark.counter} />
             </a>;
         },
-        'the sum of bookmarked on the feed by はてなブックマーク'
+        LOCALE.SUMOF_HATENA_BOOKMARK_DESC
     );
 }
 
@@ -80,7 +112,7 @@ function numofHatenaBookmark() {
                 <img style="border:none; margin-left:3px;" src={hatenaBookmark.counter} />
             </a>;
         },
-        'the number of bookmarked on the entry by はてなブックマーク'
+        LOCALE.NUMOF_HATENA_BOOKMARK_DESC
     );
 }
 
@@ -146,7 +178,7 @@ function sumofHatenaStar() {
                 <span id={hatenaStar.id}>-</span>
             </>;
         },
-        'the sum of はてなスター on the feed'
+        LOCALE.SUMOF_HATENA_STAR_DESC
     );
 }
 
@@ -213,13 +245,13 @@ function initHatenaStar() {
 */
 
 function displayHatenaBookmarkComment() {
+    // style sheet settings
+    // all styles have prefix "hatebu_" of class name
     GM_addStyle(<><![CDATA[
-        div.hatebu_container {
-            position: relative;
-        }
-        div.hatebu_container img {
-            vertical-align: text-bottom;
-        }
+        /* container */
+        div.hatebu_container img { vertical-align: text-bottom; }
+
+        /* title and status */
         h3.hatebu_title {
             border-bottom: 1px solid #5279E7;
             font-family: Arial, Sans-Serif;
@@ -230,14 +262,16 @@ function displayHatenaBookmarkComment() {
         span.hatebu_status { quotes: '(' ')'; }
         span.hatebu_status:before { content: open-quote; }
         span.hatebu_status:after  { content: close-quote; }
+
+        /* screenshot */
         img.hatebu_screenshot {
+            display: block;
+            float: left;
+            margin: 10px;
             border: 1px solid #5279E7;
-            /* FIXME */
-            z-index: 5;
-            position: absolute;
-            top: 0;
-            right: 0;
         }
+
+        /* bookmarks list */
         ul.hatebu_bookmarks {
             margin:  0px;
             padding: 5px;
@@ -245,24 +279,20 @@ function displayHatenaBookmarkComment() {
             font-size: 90%;
             color: gray;
             background-color: #edf1fd;
+            min-height: 105px;
+        }
+        ul.hatebu_bookmarks * {
+            margin: 0;
+            padding: 0;
+            border: none;
         }
         ul.hatebu_bookmarks a {
             text-decoration: none;
             color: gray;
         }
-        li.hatebu_bookmark * {
-            margin: 0;
-            padding: 0;
-            border: none;
-            /* FIXME */
-            z-index: 10;
-        }
-        li.hatebu_invisible {
-            display: none;
-        }
-        span.hatebu_timestamp {
-            font-size: 90%;
-        }
+
+        /* attributes */
+        span.hatebu_timestamp { font-size: 90%; }
         a.hatebu_user {
             margin-left: 6px;
             color: #6060c0;
@@ -279,110 +309,16 @@ function displayHatenaBookmarkComment() {
             display: inline;
             quotes: '[' ']';
         }
-        li.hatebu_tag:before { color: gray; content: open-quote; }
-        li.hatebu_tag:after  { color: gray; content: close-quote; }
+        li.hatebu_tag:before, li.hatebu_tag:after { color: gray; }
+        li.hatebu_tag:before { content: open-quote; }
+        li.hatebu_tag:after  { content: close-quote; }
         span.hatebu_comment {
             margin-left: 6px;
             color: black;
         }
     ]]></>);
 
-    function _onload(response) {
-        var itemSelector = 'item_body_' + this.id;
-        var itemNode = $(itemSelector);
-        if (!itemNode) return;
-
-        var bookmarksNode;
-        GM_log(response.responseText);
-        if (response.status !== 200) bookmarksNode = buildBookmarksNode(null);
-        else {
-            var r = eval.call(window, '(' + response.responseText + ')');
-            bookmarksNode = r ? buildBookmarksNode(r) : buildBookmarksNode(null);
-        }
-
-        var l = itemNode.lastChild;
-        if (l.className === 'hatebu_container') l.parentNode.removeChild(l);
-        itemNode.innerHTML += bookmarksNode.toXMLString().replace(/\n\s+/g, '');
-
-        // different namespace ?
-        //itemNode.appendChild(xmlToDom(bookmarksNode));
-    }
-
-    function buildBookmarksNode(response) {
-        if (!response || !response.bookmarks || response.bookmarks.length <= 0) {
-            return <div class="hatebu_container">
-                <h3 class="hatebu_title">comments on はてなブックマーク</h3>
-                <p>This entry is not yet bookmarked.</p>
-            </div>;
-        }
-
-        var entryURL = response.entry_url;
-        var countImageURL = 'http://b.hatena.ne.jp/entry/image/normal/' + response.url;
-        var screenshotImageURL = response.screenshot;
-
-        var bookmarks = response.bookmarks;
-        var numofAll = parseInt(response.count, 10);
-        var numofPublic = bookmarks.length;
-        var numofPrivate = numofAll - numofPublic;
-        var numofDisplayed = numofPublic;
-        var bookmarkList = <></>;
-        for (var i=0, l=bookmarks.length ; i<l ; ++i) {
-            var bookmark = bookmarks[i];
-            var invisible = false;
-            if (FILTER_NOT_COMMENT && !bookmark.comment) {
-                invisible = true;
-                --numofDisplayed;
-            }
-            bookmarkList += buildBookmarkNode(bookmark, invisible);
-        }
-
-        return <div class="hatebu_container">
-            <h3 class="hatebu_title">
-                comments on はてなブックマーク
-                <span class="hatebu_status">
-                    <span class="hatebu_numof_displayed">{numofDisplayed}</span>/{numofPublic}+{numofPrivate}
-                </span>
-                <img class="hatebu_screenshot" src={screenshotImageURL} />
-            </h3>
-            <ul class="hatebu_bookmarks">
-                {bookmarkList}
-            </ul>
-        </div>;
-    }
-
-    function buildBookmarkNode(bookmark, invisible) {
-        var classes = ['hatebu_bookmark'];
-        if (invisible) classes.push(' hatebu_invisible');
-
-        var username = bookmark.user;
-        var userIndex = username.substring(0, 2);
-        var iconURL = ['http://www.hatena.ne.jp/users', userIndex, username, 'profile_s.gif'].join('/');
-        var userURL = 'http://b.hatena.ne.jp/' + username;
-        var timestamp = bookmark.timestamp;
-
-        var tagNode = '';
-        if (bookmark.tags.length) {
-            var tags = bookmark.tags;
-            var tagLists = <></>;
-            for (var i=0, l=tags.length ; i<l ; ++i) {
-                var tag = tags[i]
-                var tagURL = ['http://b.hatena.ne.jp', username, tag].join('/');
-                tagLists += <li class="hatebu_tag"><a href={tagURL}>{tag}</a></li>;
-            }
-            tagNode = <ul class="hatebu_tags">{tagLists}</ul>;
-        }
-
-        return <li class={classes.join(' ')}>
-            <span class="hatebu_timestamp">{timestamp}</span>
-            <a class="hatebu_user" href={userURL}>
-                <img class="hatebu_usericon" src={iconURL} alt={username} title={username} width="16" height="16" />
-                <span class="hatebu_username">{username}</span>
-            </a>
-            {tagNode}
-            <span class="hatebu_comment">{bookmark.comment}</span>
-        </li>;
-    }
-
+    // display Hatena Bookmark comments
     Keybind.add(
         KEY_HATENA_BOOKMARK_COMMENT,
         function () {
@@ -390,6 +326,7 @@ function displayHatenaBookmarkComment() {
             if (!item) return;
             var url = 'http://b.hatena.ne.jp/entry/json/' + item.link;
 
+            orderNakaNoHito('loading');
             wrapSecurely(function () {
                 GM_xmlhttpRequest({
                     method: 'GET',
@@ -399,6 +336,177 @@ function displayHatenaBookmarkComment() {
             })();
         }
     );
+
+    // order naka-no-hito
+    function orderNakaNoHito(state) {
+        switch (state) {
+            case 'loading':
+                $('loadicon').src = '/img/icon/loading.gif';
+                message(LOCALE.HATEBU_COMMENT_LOADING);
+                break;
+            case 'complete':
+                var n = 1 + Math.floor(Math.rand(3));
+                $('loadicon').src = '/img/icon/rest' + n + '.gif';
+                message(LOCALE.HATEBU_COMMENT_COMPLETE);
+                break;
+            default:
+                break;
+        }
+    }
+
+    function _onload(response) {
+        var itemSelector = 'item_body_' + this.id;
+        var itemNode = $(itemSelector);
+        if (!itemNode) return;
+
+        var bookmarksNode;
+        if (response.status !== 200) bookmarksNode = buildBookmarksNode(null);
+        else {
+            // use "call" to specify "window" ( cause by security, in "unsafeWindow" )
+            // if no bookmarks, r will be "null" ( Hatena return string "(null)" )
+            var r = eval.call(window, '(' + response.responseText + ')');
+            bookmarksNode = buildBookmarksNode(r);
+        }
+
+        // remove inserted elements previously
+        var l = itemNode.lastChild;
+        if (l.className === 'hatebu_container') l.parentNode.removeChild(l);
+        // remove unnecessary breaks and spaces, and insert !!
+        itemNode.innerHTML += bookmarksNode.toXMLString().replace(/\n\s+/g, '');
+
+        // inserted elements can not applied style by this way
+        // namespace is different?
+        //itemNode.appendChild(xmlToDom(bookmarksNode));
+
+        orderNakaNoHito('complete');
+    }
+
+    // just pack data
+    function buildBookmarksNode(response) {
+        var noData = !response || !response.bookmarks || (response.bookmarks.length <= 0);
+        if (noData) return templateBookmarkNode({ noData: noData });
+
+        // summary of the entry
+        var bookmarks = response.bookmarks;
+        var numofAll = parseInt(response.count, 10);
+        var numofPublic = bookmarks.length;
+        var numofPrivate = numofAll - numofPublic;
+        var numofComment = numofPublic;
+
+        // each of bookmark data
+        var bookmarkList = [];
+        for (var i=0, bl=bookmarks.length ; i<bl ; ++i) {
+            var bookmark = bookmarks[i];
+
+            // for comment filter
+            var className = ['hatebu_bookmark'];
+            if (!bookmark.comment) {
+                className.push('hatebu_invisible');
+                --numofComment;
+            }
+
+            // bookmark user
+            var username = bookmark.user;
+            var userIndex = username.substring(0, 2);
+
+            // each of bookmark tag
+            var tags = bookmark.tags;
+            var tagList = [];
+            for (var j=0, tl=tags.length ; j<tl ; ++j) {
+                var tag = tags[j];
+                tagList.push({
+                    tag:    tag,
+                    tagURL: ['http://b.hatena.ne.jp', username, tag].join('/'),
+                });
+            }
+
+            // just packing
+            bookmarkList.push({
+                className: className.join(' '),
+                username:  username,
+                iconURL:   ['http://www.hatena.ne.jp/users', userIndex, username, 'profile_s.gif'].join('/'),
+                userURL:   'http://b.hatena.ne.jp/' + username,
+                timestamp: bookmark.timestamp,
+                tags:      tagList,
+                comment:   bookmark.comment,
+            });
+        }
+
+        // whole data are ready
+        var data = {
+            title:              LOCALE.HATEBU_COMMENT_TITLE,
+            noData:             noData,
+            numofAll:           numofAll,
+            numofPublic:        numofPublic,
+            numofPrivate:       numofPrivate,
+            numofComment:       numofComment,
+            screenshotImageURL: response.screenshot,
+            bookmarkList:       bookmarkList,
+        };
+
+        // generate XML nodes
+        return templateBookmarkNode(data);
+    }
+
+    // E4X hell
+    function templateBookmarkNode(d) {
+        return <div class="hatebu_container">
+            <h3 class="hatebu_title">
+                {d.title}
+                <span class="hatebu_status">{d.numofComment}/{d.numofPublic}+{d.numofPrivate}</span>
+            </h3>
+
+            {tmplIf(d.noData, function () {
+            return <p>This entry is not yet bookmarked.</p>
+            }, function () {
+            return <>
+            <img class="hatebu_screenshot" src={d.screenshotImageURL} />
+            <ul class="hatebu_bookmarks">
+
+                {tmplLoop(d.bookmarkList, function (b) {
+                return <li class={b.className}>
+                    <span class="hatebu_timestamp">{b.timestamp}</span>
+                    <a class="hatebu_user" href={b.userURL}>
+                        <img class="hatebu_usericon" src={b.iconURL} alt={b.username} width="16" height="16" />
+                        <span class="hatebu_username">{b.username}</span>
+                    </a>
+
+                    {tmplIf(b.tags.length, function () {
+                    return <ul class="hatebu_tags">
+
+                        {tmplLoop(b.tags, function (t) {
+                        return <li class="hatebu_tag">
+                            <a href={t.tagURL}>{t.tag}</a>
+                        </li>;
+                        })}
+
+                    </ul>
+                    })}
+
+                    <span class="hatebu_comment">{b.comment}</span>
+                </li>;
+                })}
+
+            </ul>
+            </>
+            })}
+
+        </div>;
+    }
+
+    // comment filter
+    availableCommentFilter() ? hideComment() : showComment();
+    GM_registerMenuCommand('toggle comment filter', toggleCommentFilter);
+    Keybind.add(KEY_TOGGLE_COMMENT_FILTER, wrapSecurely(toggleCommentFilter));
+
+    function showComment() { LDR_addStyle('li.hatebu_invisible', 'display: list-item;'); }
+    function hideComment() { LDR_addStyle('li.hatebu_invisible', 'display: none;'); }
+    function availableCommentFilter() { return GM_getValue('availableCommentFilter', true); }
+    function toggleCommentFilter() {
+        var e = !availableCommentFilter();
+        e ? hideComment() : showComment();
+        GM_setValue('availableCommentFilter', e);
+    }
 }
 
 } // with (w)
@@ -419,6 +527,19 @@ function bind(func, object) {
     }
 }
 
+// emulate Perl HTML::Template with E4X
+// TMPL_LOOP
+function tmplLoop(data, action) {
+    var result = <></>;
+    for (var i=0, l=data.length ; i<l ; ++i) result += action(data[i]);
+    return result;
+}
+// TMPL_IF / TMPL_ELSE
+function tmplIf(flag, trueAction, falseAction) {
+    if (flag) return trueAction();
+    else if (falseAction) return falseAction();
+}
+
 /*
 function xmlToDom(xml, xmlns) {
     var wrapped = (xmlns)
@@ -432,19 +553,6 @@ function xmlToDom(xml, xmlns) {
     var fragment = range.extractContents();
     range.detach();
     return fragment.childNodes.length > 1 ? fragment : fragment.firstChild;
-}
-// manual evaluate
-// can not use window.eval in unsafeWindow
-function evalManually(json) {
-    var result = {};
-    var data = json.replace(/^{/, '').replace(/}$/, '').split(',');
-    for (var i=0, l=data.length ; i<l ; ++i) {
-        var temp = data[i].split(':');
-        var key = temp.shift().replace(/^"/, '').replace(/"$/, '');
-        var value = temp.join(':').replace(/^"/, '').replace(/"$/, '');
-        result[key] = value;
-    }
-    return result;
 }
 */
 

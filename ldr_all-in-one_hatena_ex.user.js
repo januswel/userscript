@@ -4,12 +4,13 @@
 // @description    add various features with services provided by Hatena, to LDR / Fastladder
 // @include        http://reader.livedoor.com/reader/*
 // @include        http://fastladder.com/reader/*
-// @version        0.40
+// @version        0.50
 // @author         janus_wel<janus.wel.3@gmail.com>
+// @require        http://github.com/januswel/jslibrary/raw/master/HTMLTemplate.js
 // ==/UserScript==
 
 /*
- * Last Change: 2009/01/09 16:08:45.
+ * Last Change: 2009/01/10 19:58:51.
  *
  * ACKNOWLEDGMENT
  * this script is based on:
@@ -35,6 +36,7 @@ const LOCALE = (function getLocale() {
                 NUMOF_HATENA_BOOKMARK_DESC: '現在のアイテムのはてなブックマークにおける被ブックマーク数合計',
                 SUMOF_HATENA_STAR_DESC:     '現在のフィードのはてなスター数合計',
                 HATEBU_COMMENT_TITLE:       'はてなブックマークコメント',
+                HATEBU_COMMENT_NODATA:      'この記事はまだブックマークされていません。',
                 HATEBU_COMMENT_LOADING:     'はてなブックマークからロード中…',
                 HATEBU_COMMENT_COMPLETE:    'ロード完了。',
             },
@@ -47,6 +49,7 @@ const LOCALE = (function getLocale() {
                 NUMOF_HATENA_BOOKMARK_DESC: 'the number of bookmarked on the entry by Hatena Bookmark',
                 SUMOF_HATENA_STAR_DESC:     'the sum of Hatena Star on the feed',
                 HATEBU_COMMENT_TITLE:       'comments on Hatena Bookmark',
+                HATEBU_COMMENT_NODATA:      'This entry is not yet bookmarked.',
                 HATEBU_COMMENT_LOADING:     'Loading Hatena Bookmark comments...',
                 HATEBU_COMMENT_COMPLETE:    'Loading completed.',
             },
@@ -245,6 +248,46 @@ function initHatenaStar() {
 */
 
 function displayHatenaBookmarkComment() {
+    // template definition
+    const template = <><![CDATA[
+    <div class="hatebu_container">
+        <h3 class="hatebu_title">
+            <TMPL_VAR NAME="title" />
+            <TMPL_UNLESS NAME="noData">
+            <span class="hatebu_status">
+                <TMPL_VAR NAME="numofComment" />/<TMPL_VAR NAME="numofPublic" />+<TMPL_VAR NAME="numofPrivate" />
+            </span>
+            </TMPL_UNLESS>
+        </h3>
+        <TMPL_IF NAME="noData">
+        <p><TMPL_VAR NAME="noDataMessage" /></p>
+        <TMPL_ELSE>
+        <img class="hatebu_screenshot" src=<TMPL_VAR NAME="screenshotImageURL" /> />
+        <ul class="hatebu_bookmarks">
+            <TMPL_LOOP NAME="bookmarkList">
+            <li class=<TMPL_VAR NAME="className" />>
+                <span class="hatebu_timestamp"><TMPL_VAR NAME="timestamp" /></span>
+                <a class="hatebu_user" href=<TMPL_VAR NAME="userURL" />>
+                    <img class="hatebu_usericon" src=<TMPL_VAR NAME="iconURL" /> alt=<TMPL_VAR NAME="username" /> width="16" height="16" />
+                    <span class="hatebu_username"><TMPL_VAR NAME="username" /></span>
+                </a>
+                <TMPL_IF NAME="numofTags">
+                <ul class="hatebu_tags">
+                    <TMPL_LOOP NAME="tagList">
+                    <li class="hatebu_tag">
+                        <a href=<TMPL_VAR NAME="tagURL" />><TMPL_VAR NAME="tag" /></a>
+                    </li>
+                    </TMPL_LOOP>
+                </ul>
+                </TMPL_IF>
+                <span class="hatebu_comment"><TMPL_VAR NAME="comment" /></span>
+            </li>
+            </TMPL_LOOP>
+        </ul>
+        </TMPL_IF>
+    </div>
+    ]]></>;
+
     // style sheet settings
     // all styles have prefix "hatebu_" of class name
     GM_addStyle(<><![CDATA[
@@ -318,6 +361,9 @@ function displayHatenaBookmarkComment() {
         }
     ]]></>);
 
+    // prepare HTML Template
+    const ht = HTMLTemplateFactory(template);
+
     // display Hatena Bookmark comments
     Keybind.add(
         KEY_HATENA_BOOKMARK_COMMENT,
@@ -384,7 +430,11 @@ function displayHatenaBookmarkComment() {
     // just pack data
     function buildBookmarksNode(response) {
         var noData = !response || !response.bookmarks || (response.bookmarks.length <= 0);
-        if (noData) return templateBookmarkNode({ noData: noData });
+        if (noData) return ht.output({
+            title:         LOCALE.HATEBU_COMMENT_TITLE,
+            noData:        noData,
+            noDataMessage: LOCALE.HATEBU_COMMENT_NODATA,
+        });
 
         // summary of the entry
         var bookmarks = response.bookmarks;
@@ -427,7 +477,8 @@ function displayHatenaBookmarkComment() {
                 iconURL:   ['http://www.hatena.ne.jp/users', userIndex, username, 'profile_s.gif'].join('/'),
                 userURL:   'http://b.hatena.ne.jp/' + username,
                 timestamp: bookmark.timestamp,
-                tags:      tagList,
+                tagList:   tagList,
+                numofTags: bookmark.tags.length,
                 comment:   bookmark.comment,
             });
         }
@@ -436,6 +487,7 @@ function displayHatenaBookmarkComment() {
         var data = {
             title:              LOCALE.HATEBU_COMMENT_TITLE,
             noData:             noData,
+            noDataMessage:      LOCALE.HATEBU_COMMENT_NODATA,
             numofAll:           numofAll,
             numofPublic:        numofPublic,
             numofPrivate:       numofPrivate,
@@ -445,53 +497,7 @@ function displayHatenaBookmarkComment() {
         };
 
         // generate XML nodes
-        return templateBookmarkNode(data);
-    }
-
-    // E4X hell
-    function templateBookmarkNode(d) {
-        return <div class="hatebu_container">
-            <h3 class="hatebu_title">
-                {d.title}
-                <span class="hatebu_status">{d.numofComment}/{d.numofPublic}+{d.numofPrivate}</span>
-            </h3>
-
-            {tmplIf(d.noData, function () {
-            return <p>This entry is not yet bookmarked.</p>
-            }, function () {
-            return <>
-            <img class="hatebu_screenshot" src={d.screenshotImageURL} />
-            <ul class="hatebu_bookmarks">
-
-                {tmplLoop(d.bookmarkList, function (b) {
-                return <li class={b.className}>
-                    <span class="hatebu_timestamp">{b.timestamp}</span>
-                    <a class="hatebu_user" href={b.userURL}>
-                        <img class="hatebu_usericon" src={b.iconURL} alt={b.username} width="16" height="16" />
-                        <span class="hatebu_username">{b.username}</span>
-                    </a>
-
-                    {tmplIf(b.tags.length, function () {
-                    return <ul class="hatebu_tags">
-
-                        {tmplLoop(b.tags, function (t) {
-                        return <li class="hatebu_tag">
-                            <a href={t.tagURL}>{t.tag}</a>
-                        </li>;
-                        })}
-
-                    </ul>
-                    })}
-
-                    <span class="hatebu_comment">{b.comment}</span>
-                </li>;
-                })}
-
-            </ul>
-            </>
-            })}
-
-        </div>;
+        return ht.output(data);
     }
 
     // comment filter
@@ -525,19 +531,6 @@ function bind(func, object) {
     return function () {
         return func.apply(object, arguments);
     }
-}
-
-// emulate Perl HTML::Template with E4X
-// TMPL_LOOP
-function tmplLoop(data, action) {
-    var result = <></>;
-    for (var i=0, l=data.length ; i<l ; ++i) result += action(data[i]);
-    return result;
-}
-// TMPL_IF / TMPL_ELSE
-function tmplIf(flag, trueAction, falseAction) {
-    if (flag) return trueAction();
-    else if (falseAction) return falseAction();
 }
 
 /*

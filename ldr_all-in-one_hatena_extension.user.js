@@ -4,15 +4,16 @@
 // @description    add various features with services provided by Hatena, to LDR / Fastladder
 // @include        http://reader.livedoor.com/reader/*
 // @include        http://fastladder.com/reader/*
-// @version        0.61
+// @version        0.62
 // @author         janus_wel<janus.wel.3@gmail.com>
 // @require        http://github.com/januswel/jslibrary/raw/master/HTMLTemplate.js
-// @resource       HATEBU_COMMENT_CSS  ldr_all-in-one_hatena_extension_hatebu_comment.css
+// @resource       LOCALE_JSON         ldr_all-in-one_hatena_extension_locale.json
+// @resource       CSS                 ldr_all-in-one_hatena_extension.css
 // @resource       HATEBU_COMMENT_TMPL ldr_all-in-one_hatena_extension_hatebu_comment.tmpl
 // ==/UserScript==
 
 /*
- * Last Change: 2009/01/11 18:07:35.
+ * Last Change: 2009/01/12 03:41:38.
  *
  * ACKNOWLEDGMENT
  * this script is based on:
@@ -23,54 +24,28 @@
  *  - ( http://michilu.com/blog/posts/123/ )
  *  - http://zeromemory.sblo.jp/article/1230111.html
  *  - http://d.hatena.ne.jp/aki77/20060601/1149184418
- */
+ * */
 
 ( function () {
 
+// settings ---
+// change below keybinds as you like
 const KEY_ADD_HATENA_STAR = 'S';
 const KEY_HATENA_BOOKMARK_COMMENT = 'C';
 const KEY_TOGGLE_COMMENT_FILTER = 'F';
-const LOCALE = (function getLocale() {
-    const LOCALE_ALL = [
-        {
-            name: 'livedoor Reader',
-            url:  '^http://reader\.livedoor\.com/reader/',
-            data: {
-                SUMOF_HATENA_BOOKMARK_DESC: '現在のフィードのはてなブックマークにおける被ブックマーク数合計',
-                NUMOF_HATENA_BOOKMARK_DESC: '現在のアイテムのはてなブックマークにおける被ブックマーク数合計',
-                SUMOF_HATENA_STAR_DESC:     '現在のフィードのはてなスター数合計',
-                HATEBU_COMMENT_TITLE:       'はてなブックマークコメント',
-                HATEBU_COMMENT_NODATA:      'この記事はまだブックマークされていません。',
-                HATEBU_COMMENT_LOADING:     'はてなブックマークからロード中…',
-                HATEBU_COMMENT_COMPLETE:    'ロード完了。',
-            },
-        },
-        {
-            name: 'Fastladder',
-            url:  '^http://fastladder\.com/reader/',
-            data: {
-                SUMOF_HATENA_BOOKMARK_DESC: 'the sum of bookmarked on the feed by Hatena Bookmark',
-                NUMOF_HATENA_BOOKMARK_DESC: 'the number of bookmarked on the entry by Hatena Bookmark',
-                SUMOF_HATENA_STAR_DESC:     'the sum of Hatena Star on the feed',
-                HATEBU_COMMENT_TITLE:       'comments on Hatena Bookmark',
-                HATEBU_COMMENT_NODATA:      'This entry is not yet bookmarked.',
-                HATEBU_COMMENT_LOADING:     'Loading Hatena Bookmark comments...',
-                HATEBU_COMMENT_COMPLETE:    'Loading completed.',
-            },
-        },
-    ];
 
-    for (var i=0, l=LOCALE_ALL.length ; i<l ; ++i) {
-        var locale = LOCALE_ALL[i]
-        if (locale.url.match(document.location.href)) return locale.data;
-    }
-    return null;
-})();
+// global constants ---
+const LOCALE = getLocale(document.location.href);
+
 
 // main ---
 window.addEventListener(
     'load',
     function () {
+        // add style
+        GM_addStyle(GM_getResourceText('CSS'));
+
+        // register features
         sumofHatenaBookmark();
         numofHatenaBookmark();
         sumofHatenaStar();
@@ -81,6 +56,7 @@ window.addEventListener(
     false
 );
 
+// feature definition ---
 // assumption
 const w = unsafeWindow || window;
 with (w) {
@@ -97,7 +73,7 @@ function sumofHatenaBookmark() {
             };
 
             return <a href={hatenaBookmark.url}>
-                <img style="vertical-align:middle; border:none;" src={hatenaBookmark.counter} />
+                <img src={hatenaBookmark.counter} />
             </a>;
         },
         LOCALE.SUMOF_HATENA_BOOKMARK_DESC
@@ -117,8 +93,8 @@ function numofHatenaBookmark() {
             };
 
             return <a href={hatenaBookmark.url}>
-                <img src="http://d.hatena.ne.jp/images/b_entry.gif" style="border:none;" />
-                <img style="border:none; margin-left:3px;" src={hatenaBookmark.counter} />
+                <img src="http://d.hatena.ne.jp/images/b_entry.gif" />
+                <img src={hatenaBookmark.counter} />
             </a>;
         },
         LOCALE.NUMOF_HATENA_BOOKMARK_DESC
@@ -128,22 +104,13 @@ function numofHatenaBookmark() {
 
 // display the sum of はてなスター on the feed
 function sumofHatenaStar() {
-    // at first, invisible
-    // refer: http://d.hatena.ne.jp/brazil/20060820/1156056851
-    GM_addStyle(<><![CDATA[
-        span.widget_sum_of_HatenaStar {
-            display:     none;
-            color:       #f4b128;
-            font-weight: bold;
-        }
-    ]]></>);
-
     function _onload(r) {
         // nothing to do, if data is not exist
         if (r.status !== 200) return;
 
-        // use call to avoid below error
-        //  function eval must be called directly, and not by way of a function of another name
+        // use "call" to avoid below error
+        //      function eval must be called directly,
+        //      and not by way of a function of another name
         // refer: http://d.hatena.ne.jp/brazil/20060821/1156164845
         var s = eval.call(window, '(' + r.responseText + ')');
 
@@ -158,7 +125,7 @@ function sumofHatenaStar() {
             if (node) {
                 clearInterval(t);
                 node.textContent = s.star_count;
-                node.parentNode.style.display = 'inline';
+                return;
             }
             if (++count >= TIMEOUT_COUNT) clearInterval(t);
         }, 100);
@@ -181,10 +148,10 @@ function sumofHatenaStar() {
                 });
             })();
 
-            return <>
-                <img style="border:none;" src="http://s.hatena.ne.jp/images/star.gif" />
+            return <a href="http://s.hatena.ne.jp/">
+                <img src="http://s.hatena.ne.jp/images/star.gif" />
                 <span id={hatenaStar.id}>-</span>
-            </>;
+            </a>;
         },
         LOCALE.SUMOF_HATENA_STAR_DESC
     );
@@ -225,9 +192,6 @@ function addHatenaStar() {
 */
 
 function displayHatenaBookmarkComment() {
-    // add style
-    GM_addStyle(GM_getResourceText('HATEBU_COMMENT_CSS'));
-
     // prepare HTML Template
     const ht = HTMLTemplateFactory(GM_getResourceText('HATEBU_COMMENT_TMPL'));
 
@@ -239,7 +203,7 @@ function displayHatenaBookmarkComment() {
             if (!item) return;
             var url = 'http://b.hatena.ne.jp/entry/json/' + item.link;
 
-            orderNakaNoHito('loading');
+            orderToNakaNoHito('loading');
             wrapSecurely(function () {
                 GM_xmlhttpRequest({
                     method: 'GET',
@@ -251,7 +215,7 @@ function displayHatenaBookmarkComment() {
     );
 
     // order naka-no-hito
-    function orderNakaNoHito(state) {
+    function orderToNakaNoHito(state) {
         switch (state) {
             case 'loading':
                 $('loadicon').src = '/img/icon/loading.gif';
@@ -267,19 +231,14 @@ function displayHatenaBookmarkComment() {
         }
     }
 
-    function _onload(response) {
-        var itemSelector = 'item_body_' + this.id;
-        var itemNode = $(itemSelector);
+    function _onload(r) {
+        var itemNode = $('item_body_' + this.id);
         if (!itemNode) return;
 
-        var bookmarksNode;
-        if (response.status !== 200) bookmarksNode = buildBookmarksNode(null);
-        else {
-            // use "call" to specify "window" ( cause by security, in "unsafeWindow" )
-            // if no bookmarks, r will be "null" ( Hatena return string "(null)" )
-            var r = eval.call(window, '(' + response.responseText + ')');
-            bookmarksNode = buildBookmarksNode(r);
-        }
+        // if no bookmarks, r will be "null" ( Hatena return string "(null)" )
+        var bookmarksNode = (r.status !== 200)
+            ? buildBookmarksNode(null)
+            : buildBookmarksNode(eval.call(window, '(' + r.responseText + ')'));
 
         // remove inserted elements previously
         var l = itemNode.lastChild;
@@ -287,12 +246,12 @@ function displayHatenaBookmarkComment() {
         // remove unnecessary breaks and spaces, and insert !!
         itemNode.innerHTML += bookmarksNode.toXMLString().replace(/\n\s+/g, '');
 
-        orderNakaNoHito('complete');
+        orderToNakaNoHito('complete');
     }
 
     // just pack data
-    function buildBookmarksNode(response) {
-        var noData = !response || !response.bookmarks || (response.bookmarks.length <= 0);
+    function buildBookmarksNode(hatena) {
+        var noData = !hatena || !hatena.bookmarks || (hatena.bookmarks.length <= 0);
         if (noData) return ht.output({
             title:         LOCALE.HATEBU_COMMENT_TITLE,
             noData:        noData,
@@ -300,8 +259,8 @@ function displayHatenaBookmarkComment() {
         });
 
         // summary of the entry
-        var bookmarks = response.bookmarks;
-        var numofAll = parseInt(response.count, 10);
+        var bookmarks = hatena.bookmarks;
+        var numofAll = parseInt(hatena.count, 10);
         var numofPublic = bookmarks.length;
         var numofPrivate = numofAll - numofPublic;
         var numofComment = numofPublic;
@@ -355,7 +314,7 @@ function displayHatenaBookmarkComment() {
             numofPublic:        numofPublic,
             numofPrivate:       numofPrivate,
             numofComment:       numofComment,
-            screenshotImageURL: response.screenshot,
+            screenshotImageURL: hatena.screenshot,
             bookmarkList:       bookmarkList,
         };
 
@@ -365,7 +324,7 @@ function displayHatenaBookmarkComment() {
 
     // comment filter
     availableCommentFilter() ? hideComment() : showComment();
-    GM_registerMenuCommand('toggle comment filter', toggleCommentFilter);
+    GM_registerMenuCommand('LDR all-in-one Hatena extension - toggle comment filter', toggleCommentFilter);
     Keybind.add(KEY_TOGGLE_COMMENT_FILTER, wrapSecurely(toggleCommentFilter));
 
     function showComment() { LDR_addStyle('li.hatebu_invisible', 'display: list-item;'); }
@@ -390,10 +349,23 @@ function wrapSecurely(f) {
     };
 }
 
+// for GM_xmlhttpRequest
 function bind(func, object) {
     return function () {
         return func.apply(object, arguments);
     }
+}
+
+// judge locale automatically
+function getLocale(url) {
+    const LOCALE_ALL = eval('(' + GM_getResourceText('LOCALE_JSON') + ')');
+
+    for (var i=0, l=LOCALE_ALL.length ; i<l ; ++i) {
+        var locale = LOCALE_ALL[i]
+        if (locale.url.match(url)) return locale.data;
+    }
+
+    throw new Error('Locale data is not found this page: ' + url);
 }
 
 } )();

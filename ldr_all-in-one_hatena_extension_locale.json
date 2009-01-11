@@ -1,0 +1,30 @@
+[
+    {
+        "name":"livedoor Reader",
+        "lang":"ja",
+        "url":"^http://reader.livedoor.com/reader/",
+        "data":{
+            "SUMOF_HATENA_BOOKMARK_DESC":"現在のフィードのはてなブックマークにおける被ブックマーク数合計",
+            "NUMOF_HATENA_BOOKMARK_DESC":"現在のアイテムのはてなブックマークにおける被ブックマーク数合計",
+            "SUMOF_HATENA_STAR_DESC":"現在のフィードのはてなスター数合計",
+            "HATEBU_COMMENT_TITLE":"はてなブックマークコメント",
+            "HATEBU_COMMENT_NODATA":"この記事はまだブックマークされていません。",
+            "HATEBU_COMMENT_LOADING":"はてなブックマークからロード中…。",
+            "HATEBU_COMMENT_COMPLETE":"ロード完了。"
+        }
+    },
+    {
+        "name":"Fastladder",
+        "lang":"en",
+        "url":"^http://fastladder.com/reader/",
+        "data":{
+            "SUMOF_HATENA_BOOKMARK_DESC":"the sum of bookmarked on the feed by Hatena Bookmark",
+            "NUMOF_HATENA_BOOKMARK_DESC":"the number of bookmarked on the entry by Hatena Bookmark",
+            "SUMOF_HATENA_STAR_DESC":"the sum of Hatena Star on the feed",
+            "HATEBU_COMMENT_TITLE":"comments on Hatena Bookmark",
+            "HATEBU_COMMENT_NODATA":"This entry is not yet bookmarked.",
+            "HATEBU_COMMENT_LOADING":"Loading Hatena Bookmark comments...",
+            "HATEBU_COMMENT_COMPLETE":"Loading completed."
+        }
+    }
+]

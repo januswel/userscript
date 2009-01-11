@@ -1,3 +1,29 @@
+/* for the feature that display sum of Hatena Bookmarks --- */
+span.widget_sum_of_HatenaBookmark img {
+    border: none;
+    vertical-align: middle;
+}
+
+
+/* for the feature that display sum of Hatena Bookmarks --- */
+span.widget_number_of_HatenaBookmark img {
+    border: none;
+    vertical-align: middle;
+}
+
+
+/* for the feature that display sum of Hatena Stars --- */
+span.widget_sum_of_HatenaStar a {
+    font-weight: bold;
+    text-decoration: none;
+    color: #f4b128;
+}
+span.widget_sum_of_HatenaStar img {
+    border: none;
+}
+
+
+/* for the feature that display comments on Hatena Bookmark --- */
 /* container */
 div.hatebu_container img { vertical-align: text-bottom; }
 
@@ -53,7 +79,7 @@ ul.hatebu_tags {
     list-style: none;
     font-size: 90%;
     text-decoration: none;
-    color: #66c;
+    color: #6060c0;
 }
 li.hatebu_tag {
     display: inline;

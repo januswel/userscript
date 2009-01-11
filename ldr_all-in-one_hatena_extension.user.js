@@ -4,15 +4,15 @@
 // @description    add various features with services provided by Hatena, to LDR / Fastladder
 // @include        http://reader.livedoor.com/reader/*
 // @include        http://fastladder.com/reader/*
-// @version        0.60
+// @version        0.61
 // @author         janus_wel<janus.wel.3@gmail.com>
 // @require        http://github.com/januswel/jslibrary/raw/master/HTMLTemplate.js
-// @resource       HATEBU_COMMENT_CSS http://github.com/januswel/userscript/raw/gsimport/ldr_all-in-one_hatena_extension_hatebu_comment.css
-// @resource       HATEBU_COMMENT_TMPL http://github.com/januswel/userscript/raw/gsimport/ldr_all-in-one_hatena_extension_hatebu_comment.tmpl
+// @resource       HATEBU_COMMENT_CSS  ldr_all-in-one_hatena_extension_hatebu_comment.css
+// @resource       HATEBU_COMMENT_TMPL ldr_all-in-one_hatena_extension_hatebu_comment.tmpl
 // ==/UserScript==
 
 /*
- * Last Change: 2009/01/11 17:41:36.
+ * Last Change: 2009/01/11 18:07:35.
  *
  * ACKNOWLEDGMENT
  * this script is based on:

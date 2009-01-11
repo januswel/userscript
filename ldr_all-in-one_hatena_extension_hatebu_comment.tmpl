@@ -1,0 +1,36 @@
+<div class="hatebu_container">
+    <h3 class="hatebu_title">
+        <TMPL_VAR NAME="title" />
+        <TMPL_UNLESS NAME="noData">
+        <span class="hatebu_status">
+            <TMPL_VAR NAME="numofComment" />/<TMPL_VAR NAME="numofPublic" />+<TMPL_VAR NAME="numofPrivate" />
+        </span>
+        </TMPL_UNLESS>
+    </h3>
+    <TMPL_IF NAME="noData">
+    <p><TMPL_VAR NAME="noDataMessage" /></p>
+    <TMPL_ELSE>
+    <img class="hatebu_screenshot" src=<TMPL_VAR NAME="screenshotImageURL" /> />
+    <ul class="hatebu_bookmarks">
+        <TMPL_LOOP NAME="bookmarkList">
+        <li class=<TMPL_VAR NAME="className" />>
+            <span class="hatebu_timestamp"><TMPL_VAR NAME="timestamp" /></span>
+            <a class="hatebu_user" href=<TMPL_VAR NAME="userURL" />>
+                <img class="hatebu_usericon" src=<TMPL_VAR NAME="iconURL" /> alt=<TMPL_VAR NAME="username" /> width="16" height="16" />
+                <span class="hatebu_username"><TMPL_VAR NAME="username" /></span>
+            </a>
+            <TMPL_IF NAME="numofTags">
+            <ul class="hatebu_tags">
+                <TMPL_LOOP NAME="tagList">
+                <li class="hatebu_tag">
+                    <a href=<TMPL_VAR NAME="tagURL" />><TMPL_VAR NAME="tag" /></a>
+                </li>
+                </TMPL_LOOP>
+            </ul>
+            </TMPL_IF>
+            <span class="hatebu_comment"><TMPL_VAR NAME="comment" /></span>
+        </li>
+        </TMPL_LOOP>
+    </ul>
+    </TMPL_IF>
+</div>

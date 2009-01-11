@@ -1,0 +1,68 @@
+/* container */
+div.hatebu_container img { vertical-align: text-bottom; }
+
+/* title and status */
+h3.hatebu_title {
+    border-bottom: 1px solid #5279E7;
+    font-family: Arial, Sans-Serif;
+    font-size:   16px;
+    font-weight: bolder;
+    color: #6060c0;
+}
+span.hatebu_status { quotes: '(' ')'; }
+span.hatebu_status:before { content: open-quote; }
+span.hatebu_status:after  { content: close-quote; }
+
+/* screenshot */
+img.hatebu_screenshot {
+    display: block;
+    float: left;
+    margin: 10px;
+    border: 1px solid #5279E7;
+}
+
+/* bookmarks list */
+ul.hatebu_bookmarks {
+    margin:  0px;
+    padding: 5px;
+    list-style: none;
+    font-size: 90%;
+    color: gray;
+    background-color: #edf1fd;
+    min-height: 105px;
+}
+ul.hatebu_bookmarks * {
+    margin: 0;
+    padding: 0;
+    border: none;
+}
+ul.hatebu_bookmarks a {
+    text-decoration: none;
+    color: gray;
+}
+
+/* attributes */
+span.hatebu_timestamp { font-size: 90%; }
+a.hatebu_user {
+    margin-left: 6px;
+    color: #6060c0;
+}
+ul.hatebu_tags {
+    display: inline;
+    margin-left: 6px;
+    list-style: none;
+    font-size: 90%;
+    text-decoration: none;
+    color: #66c;
+}
+li.hatebu_tag {
+    display: inline;
+    quotes: '[' ']';
+}
+li.hatebu_tag:before, li.hatebu_tag:after { color: gray; }
+li.hatebu_tag:before { content: open-quote; }
+li.hatebu_tag:after  { content: close-quote; }
+span.hatebu_comment {
+    margin-left: 6px;
+    color: black;
+}

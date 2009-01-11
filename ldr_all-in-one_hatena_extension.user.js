@@ -4,28 +4,32 @@
 // @description    add various features with services provided by Hatena, to LDR / Fastladder
 // @include        http://reader.livedoor.com/reader/*
 // @include        http://fastladder.com/reader/*
-// @version        0.50
+// @version        0.60
 // @author         janus_wel<janus.wel.3@gmail.com>
 // @require        http://github.com/januswel/jslibrary/raw/master/HTMLTemplate.js
+// @resource       HATEBU_COMMENT_CSS http://github.com/januswel/userscript/raw/gsimport/ldr_all-in-one_hatena_extension_hatebu_comment.css
+// @resource       HATEBU_COMMENT_TMPL http://github.com/januswel/userscript/raw/gsimport/ldr_all-in-one_hatena_extension_hatebu_comment.tmpl
 // ==/UserScript==
 
 /*
- * Last Change: 2009/01/10 19:58:51.
+ * Last Change: 2009/01/11 17:41:36.
  *
  * ACKNOWLEDGMENT
  * this script is based on:
  *  - http://la.ma.la/blog/diary_200610182325.htm
  *  - http://la.ma.la/blog/diary_200707121316.htm
  *  - http://d.hatena.ne.jp/KGA/20070908/1189223454
- *  - http://michilu.com/blog/posts/123/
+ *  - ( http://d.hatena.ne.jp/hatenastar/20070707 )
+ *  - ( http://michilu.com/blog/posts/123/ )
  *  - http://zeromemory.sblo.jp/article/1230111.html
  *  - http://d.hatena.ne.jp/aki77/20060601/1149184418
  */
 
 ( function () {
 
-const KEY_HATENA_BOOKMARK_COMMENT = 'h';
-const KEY_TOGGLE_COMMENT_FILTER = 'H';
+const KEY_ADD_HATENA_STAR = 'S';
+const KEY_HATENA_BOOKMARK_COMMENT = 'C';
+const KEY_TOGGLE_COMMENT_FILTER = 'F';
 const LOCALE = (function getLocale() {
     const LOCALE_ALL = [
         {
@@ -70,6 +74,8 @@ window.addEventListener(
         sumofHatenaBookmark();
         numofHatenaBookmark();
         sumofHatenaStar();
+        // not work
+//        addHatenaStar();
         displayHatenaBookmarkComment();
     },
     false
@@ -121,7 +127,6 @@ function numofHatenaBookmark() {
 
 
 // display the sum of はてなスター on the feed
-// TODO cache sum of はてなスター to DOM storage
 function sumofHatenaStar() {
     // at first, invisible
     // refer: http://d.hatena.ne.jp/brazil/20060820/1156056851
@@ -188,181 +193,43 @@ function sumofHatenaStar() {
 
 // display and add はてなスター to entry.
 /* not work
-includeHatenaStar();
-var t = setInterval(
-    function() {
-        if (Hatena) {
-            clearInterval(t);
-            initHatenaStar();
-        }
-    },
-    100
-);
+function addHatenaStar() {
+    includeHatenaStar();
+    var t = setInterval(
+        function() {
+            if (Hatena) {
+                clearInterval(t);
+                initHatenaStar();
+            }
+        },
+        100
+    );
 
-function includeHatenaStar() {
-    var s = document.createElement('script');
-    s.src = 'http://s.hatena.ne.jp/js/HatenaStar.js';
-    s.charset = 'utf-8';
-    document.body.appendChild(s);
-};
+    function includeHatenaStar() {
+        var s = document.createElement('script');
+        s.type = 'text/javascript';
+        s.charset = 'UTF-8';
+        s.src = 'http://s.hatena.ne.jp/js/HatenaStar.js';
+        document.getElementsByTagName('head')[0].appendChild(s);
+    }
 
-function initHatenaStar() {
-    var s = Hatena.Star;
-    // exception "Not enough arguments"...
-    // new s.EntryLoader() ?
-//    s.EntryLoader.headerTagAndClassName = ['h2', 'item_title'];
-//    Keybind.add('H', function(){
-//        var stars = new s.EntryLoader();
-//    });
-
-    // exception "Not enough arguments"...
-    // new s.EntryLoader() ?
-//    s.SiteConfig = {
-//        entryNodes: {
-//            'div.item': {
-//                uri:       'h2.item_title > a',
-//                title:     'h2.item_title',
-//                container: 'h2.item_title'
-//            }
-//        }
-//    };
-//
-//    channel_widgets.add(
-//        'hatena_star',
-//        function () {
-//            setTimeout(
-//                function () {
-//                    var e = s.EntryLoader;
-//                    var entries = e.entries;
-//                    e.entries = null;
-//                    new e();
-//                    if (entries) {
-//                        e.entries = Array.concat(entries, e.entries);
-//                    }
-//                },
-//                3000
-//            );
-//        }
-//    );
+    function initHatenaStar() {
+        var s = Hatena.Star;
+        s.EntryLoader.headerTagAndClassName = ['h2', 'item_title'];
+        Keybind.add(KEY_ADD_HATENA_STAR, function(){
+            // the error "not enough argument" occur
+            var stars = new s.EntryLoader();
+        });
+    }
 }
 */
 
 function displayHatenaBookmarkComment() {
-    // template definition
-    const template = <><![CDATA[
-    <div class="hatebu_container">
-        <h3 class="hatebu_title">
-            <TMPL_VAR NAME="title" />
-            <TMPL_UNLESS NAME="noData">
-            <span class="hatebu_status">
-                <TMPL_VAR NAME="numofComment" />/<TMPL_VAR NAME="numofPublic" />+<TMPL_VAR NAME="numofPrivate" />
-            </span>
-            </TMPL_UNLESS>
-        </h3>
-        <TMPL_IF NAME="noData">
-        <p><TMPL_VAR NAME="noDataMessage" /></p>
-        <TMPL_ELSE>
-        <img class="hatebu_screenshot" src=<TMPL_VAR NAME="screenshotImageURL" /> />
-        <ul class="hatebu_bookmarks">
-            <TMPL_LOOP NAME="bookmarkList">
-            <li class=<TMPL_VAR NAME="className" />>
-                <span class="hatebu_timestamp"><TMPL_VAR NAME="timestamp" /></span>
-                <a class="hatebu_user" href=<TMPL_VAR NAME="userURL" />>
-                    <img class="hatebu_usericon" src=<TMPL_VAR NAME="iconURL" /> alt=<TMPL_VAR NAME="username" /> width="16" height="16" />
-                    <span class="hatebu_username"><TMPL_VAR NAME="username" /></span>
-                </a>
-                <TMPL_IF NAME="numofTags">
-                <ul class="hatebu_tags">
-                    <TMPL_LOOP NAME="tagList">
-                    <li class="hatebu_tag">
-                        <a href=<TMPL_VAR NAME="tagURL" />><TMPL_VAR NAME="tag" /></a>
-                    </li>
-                    </TMPL_LOOP>
-                </ul>
-                </TMPL_IF>
-                <span class="hatebu_comment"><TMPL_VAR NAME="comment" /></span>
-            </li>
-            </TMPL_LOOP>
-        </ul>
-        </TMPL_IF>
-    </div>
-    ]]></>;
-
-    // style sheet settings
-    // all styles have prefix "hatebu_" of class name
-    GM_addStyle(<><![CDATA[
-        /* container */
-        div.hatebu_container img { vertical-align: text-bottom; }
-
-        /* title and status */
-        h3.hatebu_title {
-            border-bottom: 1px solid #5279E7;
-            font-family: Arial, Sans-Serif;
-            font-size:   16px;
-            font-weight: bolder;
-            color: #6060c0;
-        }
-        span.hatebu_status { quotes: '(' ')'; }
-        span.hatebu_status:before { content: open-quote; }
-        span.hatebu_status:after  { content: close-quote; }
-
-        /* screenshot */
-        img.hatebu_screenshot {
-            display: block;
-            float: left;
-            margin: 10px;
-            border: 1px solid #5279E7;
-        }
-
-        /* bookmarks list */
-        ul.hatebu_bookmarks {
-            margin:  0px;
-            padding: 5px;
-            list-style: none;
-            font-size: 90%;
-            color: gray;
-            background-color: #edf1fd;
-            min-height: 105px;
-        }
-        ul.hatebu_bookmarks * {
-            margin: 0;
-            padding: 0;
-            border: none;
-        }
-        ul.hatebu_bookmarks a {
-            text-decoration: none;
-            color: gray;
-        }
-
-        /* attributes */
-        span.hatebu_timestamp { font-size: 90%; }
-        a.hatebu_user {
-            margin-left: 6px;
-            color: #6060c0;
-        }
-        ul.hatebu_tags {
-            display: inline;
-            margin-left: 6px;
-            list-style: none;
-            font-size: 90%;
-            text-decoration: none;
-            color: #66c;
-        }
-        li.hatebu_tag {
-            display: inline;
-            quotes: '[' ']';
-        }
-        li.hatebu_tag:before, li.hatebu_tag:after { color: gray; }
-        li.hatebu_tag:before { content: open-quote; }
-        li.hatebu_tag:after  { content: close-quote; }
-        span.hatebu_comment {
-            margin-left: 6px;
-            color: black;
-        }
-    ]]></>);
+    // add style
+    GM_addStyle(GM_getResourceText('HATEBU_COMMENT_CSS'));
 
     // prepare HTML Template
-    const ht = HTMLTemplateFactory(template);
+    const ht = HTMLTemplateFactory(GM_getResourceText('HATEBU_COMMENT_TMPL'));
 
     // display Hatena Bookmark comments
     Keybind.add(
@@ -419,10 +286,6 @@ function displayHatenaBookmarkComment() {
         if (l.className === 'hatebu_container') l.parentNode.removeChild(l);
         // remove unnecessary breaks and spaces, and insert !!
         itemNode.innerHTML += bookmarksNode.toXMLString().replace(/\n\s+/g, '');
-
-        // inserted elements can not applied style by this way
-        // namespace is different?
-        //itemNode.appendChild(xmlToDom(bookmarksNode));
 
         orderNakaNoHito('complete');
     }
@@ -532,22 +395,6 @@ function bind(func, object) {
         return func.apply(object, arguments);
     }
 }
-
-/*
-function xmlToDom(xml, xmlns) {
-    var wrapped = (xmlns)
-        ? '<root xmlns="' + xmlns + '">' + xml.toXMLString() + '</root>'
-        : '<root>' + xml.toXMLString() + '</root>';
-    var doc = (new DOMParser).parseFromString(wrapped, 'application/xml');
-
-    var imported = document.importNode(doc.documentElement, true);
-    var range = document.createRange();
-    range.selectNodeContents(imported);
-    var fragment = range.extractContents();
-    range.detach();
-    return fragment.childNodes.length > 1 ? fragment : fragment.firstChild;
-}
-*/
 
 } )();
 
